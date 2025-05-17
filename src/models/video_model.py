@@ -34,7 +34,7 @@ class VideoModel(BaseModel):
         video.id = res.inserted_id
         return video
     
-    async def get_video_by_VideoID(self, video_id: str):
+    async def get_video_by_ID(self, video_id: str):
         record = await self.collection.find_one({"video_id": video_id})
         if record is None:
             return None
