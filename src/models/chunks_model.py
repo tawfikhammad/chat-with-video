@@ -45,6 +45,14 @@ class ChunkModel(BaseModel):
     async def del_chunks_by_VideoID(self, Video_id: Video):
         result = await self.collection.delete_many({"chunk_Video_id": Video_id})
         return result.deleted_count
+    
+    async def get_video_chunks(self, video_id: str, page_no: int = 1, limit: int = 10):
+        skip = (page_no - 1) * limit
+        cursor = self.collection.find({"chunk_Video_id": video_id}).skip(skip).limit(limit)
+        chunks = []
+        async for document in cursor:
+            chunks.append(Chunk(**document))
+        return chunks
 
 
 
