@@ -1,5 +1,5 @@
 from typing import Tuple, Dict, List, Optional
-from .BaseController import BaseController
+from .base_controller import BaseController
 import requests
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
