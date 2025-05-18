@@ -11,7 +11,7 @@ logger = logging.getLogger('unicorn.errors')
 
 data_router = APIRouter()
 
-@data_router.post("/data/upload_url")
+@data_router.post("/upload_url")
 async def get_data(request:Request, process_request:ProcessRequest, settings:settings= Depends(get_settings)):
 
     if not process_request.video_url:
@@ -58,5 +58,4 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
         logger.error(f"Error inserting chunks: {e}")
         return status.HTTP_500_INTERNAL_SERVER_ERROR
 
-
-    return metadata
+    return video
