@@ -42,7 +42,7 @@ class ChunkModel(BaseModel):
             await self.collection.bulk_write(operation)
         return len(chunks)
     
-    async def del_chunks_by_VideoID(self, Video_id: Video):
+    async def del_video_chunks(self, Video_id: Video):
         result = await self.collection.delete_many({"chunk_Video_id": Video_id})
         return result.deleted_count
     
