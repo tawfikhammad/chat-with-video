@@ -1,4 +1,4 @@
-from .BaseController import BaseController
+from .base_controller import BaseController
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 class TextProcessor(BaseController):
@@ -14,10 +14,10 @@ class TextProcessor(BaseController):
         strings = '\n'.join(strings)
 
         text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        length_function=len,
-        is_separator_regex=False,)
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+            is_separator_regex=False,)
 
         chunks = text_splitter.create_documents([strings])
 
