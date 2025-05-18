@@ -21,13 +21,15 @@ class GeminiProvider(LLMInterface):
         self.embedding_size = None
         
         genai.configure(api_key=self.api_key)
+
+        self.enums = GeminiEnums
         
         self.logger = logging.getLogger(__name__)
     
-    async def set_generation_model(self, generation_model_id: str):
+    def set_generation_model(self, generation_model_id: str):
         self.generation_model_id = generation_model_id
     
-    async def set_embedding_model(self, embedding_model_id: str, embedding_size: int):
+    def set_embedding_model(self, embedding_model_id: str, embedding_size: int):
         self.embedding_model_id = embedding_model_id
         self.embedding_size = embedding_size
    
@@ -35,7 +37,7 @@ class GeminiProvider(LLMInterface):
     def process_text(self, text: str):
         return text[:self.default_max_input_characters].strip()
     
-    async def generate(self, prompt: str, chat_history: list=[], max_output_tokens: int=None, temperature: float=None):
+    def generate(self, prompt: str, chat_history: list=[], max_output_tokens: int=None, temperature: float=None):
         if not self.generation_model_id:
             self.logger.error("Generation model for Gemini was not set")
             return None
@@ -65,7 +67,7 @@ class GeminiProvider(LLMInterface):
             self.logger.error(f"Error generating text with Gemini: {str(e)}")
             return None
     
-    async def embed(self, text: str, document_type: str = None):
+    def embed(self, text: str, document_type: str = None):
         if not self.embedding_model_id:
             self.logger.error("Embedding model for Gemini was not set")
             return None
