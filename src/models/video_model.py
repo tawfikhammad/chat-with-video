@@ -26,7 +26,7 @@ class VideoModel(BaseModel):
                     unique=index["unique"])
                 
     async def create_video(self, video: Video):
-        existing_video  = await self.get_video_by_VideoID(video.video_id)
+        existing_video  = await self.get_video_by_ID(video.video_id)
         if existing_video :
             logger.warning(f"Video with ID {video.video_id} already exists in the database.")
             return existing_video 
