@@ -120,19 +120,21 @@ class RAGController(BaseController):
             if not retrieved_documents or len(retrieved_documents) == 0:
                 return answer, full_prompt
             
-            # step2: Construct LLM prompt
+            # Construct LLM prompt
             system_prompt = self.template_parser.get("rag", "system_prompt")
 
             documents_prompts = "\n".join([
                 self.template_parser.get("rag", "document_prompt", {
-                        "doc_num": idx + 1,
-                        "chunk_text": doc.text,
+                    "doc_num": idx + 1,
+                    "chunk_text": doc.text,
                 })
                 for idx, doc in enumerate(retrieved_documents)
             ])
 
             footer_prompt = self.template_parser.get("rag", "footer_prompt", {
-                        "query": query,
+                "title": video.title,
+                "author": video.author,
+                "query": query,
                 })
 
             full_prompt = "\n\n".join([documents_prompts,  footer_prompt])
@@ -147,4 +149,4 @@ class RAGController(BaseController):
 
         except Exception as e:
             self.logger.error(f"Error answering RAG question: {e}")
-            return None, None, None
+            return None, None
