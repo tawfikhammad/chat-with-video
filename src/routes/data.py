@@ -1,33 +1,32 @@
 from fastapi import APIRouter, Depends, status, Request
+from fastapi.responses import JSONResponse
 from utils.app_config import get_settings, settings
+from utils.logging import get_logger
 from controllers import DataController, TextProcessor
 from .schema import ProcessRequest
 from models import VideoModel, ChunkModel
 from models.db_schemas import Video, Chunk
 
-import logging
-logger = logging.getLogger('unicorn.errors')
-
+logger = get_logger(__name__)
 
 data_router = APIRouter()
 
 @data_router.post("/upload_url")
 async def get_data(request:Request, process_request:ProcessRequest, settings:settings= Depends(get_settings)):
 
-    if not process_request.video_url:
-        logger.error("No video URL provided")
-        return status.HTTP_400_BAD_REQUEST
-    
-    data_controller = DataController(video_url=process_request.video_url)
-    is_valid, video_id = data_controller.get_video_id()
-
-    if not is_valid:
-        logger.error("Invalid video URL provided")
-        return status.HTTP_400_BAD_REQUEST
-    
-    metadata = data_controller.get_video_metadata(video_id=video_id)
-
     try: 
+        data_controller = DataController(video_url=process_request.video_url)
+        video_id = data_controller.get_video_id()
+
+        if not video_id:
+            logger.error("Invalid video URL provided")
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": "INVALID_VIDEO_URL"}
+            )
+    
+        metadata = data_controller.get_video_metadata(video_id=video_id)
+
         video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
         video = await video_model.create_video(
             video=Video(
@@ -38,24 +37,37 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
                 publish_time=metadata["publish_time"],
             )
         )
-    except Exception as e:
-        logger.error(f"Error creating video: {e}")
-        return status.HTTP_500_INTERNAL_SERVER_ERROR
 
+        transcript = data_controller.get_video_transcript(video_id=video_id)
+        if not transcript:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": "TRANSCRIPT_FETCH_ERROR"}
+            )
 
-    transcript = data_controller.get_video_transcript(video_id=video_id)
-    if not transcript:
-        logger.error("No transcript found")
-        return status.HTTP_400_BAD_REQUEST
+        text_processor = TextProcessor()
+        chunks = text_processor.transcript_chunks(transcript=transcript)
+        if not chunks:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": "TRANSCRIPT_CHUNKING_ERROR"}
+            )
 
-    text_processor = TextProcessor()
-    chunks = text_processor.transcript_chunks(transcript=transcript)
-
-    chunks_model = await ChunkModel.get_instance(db_client=request.app.mongodb_client)
-    try:
+        chunks_model = await ChunkModel.get_instance(db_client=request.app.mongodb_client)
         await chunks_model.insert_chunks(chunks=chunks)
-    except Exception as e:
-        logger.error(f"Error inserting chunks: {e}")
-        return status.HTTP_500_INTERNAL_SERVER_ERROR
 
-    return video
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "signal": "VIDEO_PROCESSING_SUCCESS",
+                "video_id": str(video.id),
+                "num_chunks": len(chunks)
+            }
+        )
+    
+    except Exception as e:
+        logger.error(f"Error processing video URL: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"signal": "INTERNAL_SERVER_ERROR"} 
+        )   
