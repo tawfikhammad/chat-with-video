@@ -1,13 +1,13 @@
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http import models
-from ..VDBInterface import VDBInterface
+from ..VDBInterface import VectorDBInterface
 from models.db_schemas import RetrievedDocument
 from typing import List
 import uuid
 from utils.logging import get_logger
 logger = get_logger(__name__)
 
-class QdrantProvider(VDBInterface):
+class QdrantProvider(VectorDBInterface):
     def __init__(self, db_path:str, distance_metric:str):
         self.db_path = db_path
         self.distance_metric = None
@@ -27,10 +27,10 @@ class QdrantProvider(VDBInterface):
             await self.client.close()
             logger.info("Disconnected from Qdrant database.")
 
-    async def is_collection_exist(self, collection_name) -> bool:
+    async def is_collection_exist(self, collection_name):
         return await self.client.collection_exists(collection_name)
 
-    async def list_all_collections(self) -> List: 
+    async def list_all_collections(self):
         return await self.client.get_collections()
 
     async def get_collection_info(self, collection_name):
@@ -54,8 +54,10 @@ class QdrantProvider(VDBInterface):
         if not await self.client.collection_exists(collection_name):
             _ = await self.client.create_collection(
                 collection_name=collection_name,
-                vector_size= embedding_size,
-                distance=self.distance_metric,
+                vectors_config=models.VectorParams(
+                    size=embedding_size,
+                    distance=self.distance_metric
+                )
             )
             logger.info(f"Collection '{collection_name}' created.")
         else:
@@ -104,8 +106,7 @@ class QdrantProvider(VDBInterface):
 
                 await self.client.upsert(
                     collection_name=collection_name,
-                    points=batch_points,
-                    batch_size=batch_size
+                    points=batch_points
                 )
 
                 logger.info(f"Inserted batch {i} to {i + len(batch_points)} into collection '{collection_name}'")

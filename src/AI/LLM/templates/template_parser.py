@@ -33,7 +33,7 @@ class TemplateParser:
             return None
         
         # import group module
-        module = __import__(f"stores.llm.templates.locales.{targeted_language}.{group}", fromlist=[group])
+        module = __import__(f"AI.LLM.templates.locales.{targeted_language}.{group}", fromlist=[group])
 
         if not module:
             return None

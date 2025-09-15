@@ -5,46 +5,46 @@ from models.db_schemas import RetrievedDocument
 class VectorDBInterface(ABC):
 
     @abstractmethod
-    def connect(self):
+    async def connect(self):
         pass
 
     @abstractmethod
-    def disconnect(self):
+    async def disconnect(self):
         pass
 
     @abstractmethod
-    def is_collection_existed(self, collection_name: str) -> bool:
+    async def is_collection_exist(self, collection_name: str):
         pass
 
     @abstractmethod
-    def list_all_collections(self) -> List:
+    async def list_all_collections(self):
         pass
 
     @abstractmethod
-    def get_collection_info(self, collection_name: str) -> dict:
+    async def get_collection_info(self, collection_name: str):
         pass
 
     @abstractmethod
-    def delete_collection(self, collection_name: str):
+    async def delete_collection(self, collection_name: str):
         pass
 
     @abstractmethod
-    def create_collection(self, collection_name: str, 
+    async def create_collection(self, collection_name: str, 
                                 embedding_size: int,
                                 do_reset: bool = False):
         pass
 
     @abstractmethod
-    def insert_one(self, collection_name: str, text: str, vector: list,
+    async def insert_one(self, collection_name: str, text: str, vector: list,
                          record_id: str = None):
         pass
 
     @abstractmethod
-    def insert_many(self, collection_name: str, texts: list, 
+    async def insert_many(self, collection_name: str, texts: list,
                           vectors: list, record_ids: list = None, batch_size: int = 50):
         pass
 
     @abstractmethod
-    def search(self, collection_name: str, vector: list, limit: int) -> List[RetrievedDocument]:
+    async def search(self, collection_name: str, vector: list, limit: int) -> List[RetrievedDocument]:
         pass
     

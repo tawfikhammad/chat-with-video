@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Body, status
 from fastapi.responses import JSONResponse
-from src.controllers import RAGController
-from src.models import VideoModel, ChunkModel
+from controllers import RAGController
+from models import VideoModel, ChunkModel
 from .schema import PushRequest, SearchRequest
 from utils.app_enums import ResponseSignals
 from utils.logging import get_logger
@@ -12,8 +12,8 @@ logger = get_logger(__name__)
 @vdb_router.post("/index")
 async def index_video(request: Request, video_id: str, push_request: PushRequest):
 
-    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
-    chunk_model = await ChunkModel.get_instance(db_client=request.app.db_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
+    chunk_model = await ChunkModel.get_instance(db_client=request.app.mongodb_client)
 
     video = await video_model.get_video_by_ID(video_id=video_id)
     if not video:
@@ -37,9 +37,11 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
     while has_records:
         page_chunks = await chunk_model.get_video_chunks(video_id=video.id, page_no=page_no)
         if len(page_chunks):
+            logger.info(f"Fetched {len(page_chunks)} chunks from database for page {page_no}")
             page_no += 1
         
         if not page_chunks or len(page_chunks) == 0:
+            logger.info(f"No more chunks found for video {video.id} on page {page_no}")
             has_records = False
             break
 
@@ -73,7 +75,7 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
 @vdb_router.get("/info")
 async def get_video_index_info(request: Request, video_id: str):
     
-    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
     video = await video_model.get_video_by_ID(video_id=video_id)
 
     rag_controller = RAGController(
@@ -83,7 +85,7 @@ async def get_video_index_info(request: Request, video_id: str):
         template_parser=request.app.template_parser,
     )
 
-    collection_info = await rag_controller.get_vector_db_collection_info(video= video)
+    collection_info = await rag_controller.get_vector_db_collection_info(video=video)
 
     return JSONResponse(
         content={
@@ -95,7 +97,7 @@ async def get_video_index_info(request: Request, video_id: str):
 @vdb_router.post("/search")
 async def search_index(request: Request, video_id: str, search_request: SearchRequest):
     
-    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
     video = await video_model.get_video_by_ID(video_id=video_id)
 
     rag_controller = RAGController(

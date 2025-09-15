@@ -20,7 +20,7 @@ async def startup():
 
     # generation client
     app.generation_client = llm_provider_factory.create(provider=settings.GENERATION_BACKEND)
-    app.generation_client.set_generation_model(model_id = settings.GENERATION_MODEL_ID)
+    app.generation_client.set_generation_model(model_id=settings.GENERATION_MODEL_ID)
 
     # embedding client
     app.embedding_client = llm_provider_factory.create(provider=settings.EMBEDDING_BACKEND)
@@ -29,7 +29,7 @@ async def startup():
     
     # vector db client
     app.vectordb_client = vdb_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
-    app.vectordb_client.connect()
+    await app.vectordb_client.connect()
 
     app.template_parser = TemplateParser(
         language=settings.PRIMARY_LANG,
@@ -39,7 +39,7 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     app.mongodb_conn.close()
-    app.vectordb_client.disconnect()
+    await app.vectordb_client.disconnect()
 
 app.include_router(base.base_router)
 app.include_router(data.data_router, prefix="/data", tags=["Data"])

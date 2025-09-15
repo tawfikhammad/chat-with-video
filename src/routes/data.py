@@ -38,7 +38,7 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
             )
         )
 
-        transcript = await data_controller.get_video_transcript(video_id=video_id)
+        transcript = data_controller.get_video_transcript(video_id=video_id)
         if not transcript:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,12 +46,20 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
             )
 
         text_processor = TextProcessor()
-        chunks = await text_processor.transcript_chunks(transcript=transcript)
-        if not chunks:
+        processed_chunks = await text_processor.transcript_chunks(transcript=transcript)
+        if not processed_chunks:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"signal": "TRANSCRIPT_CHUNKING_ERROR"}
             )
+        
+        chunks = [
+            Chunk(
+                chunk_text=chunk_text,
+                chunk_index=i,
+                chunk_video_id=video.id
+            ) for i, chunk_text in enumerate(processed_chunks)
+        ]
 
         chunks_model = await ChunkModel.get_instance(db_client=request.app.mongodb_client)
         await chunks_model.insert_chunks(chunks=chunks)
@@ -60,7 +68,8 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
             status_code=status.HTTP_200_OK,
             content={
                 "signal": "VIDEO_PROCESSING_SUCCESS",
-                "video_id": str(video.id),
+                "id": str(video.id),
+                "video_id": video.video_id,
                 "num_chunks": len(chunks)
             }
         )

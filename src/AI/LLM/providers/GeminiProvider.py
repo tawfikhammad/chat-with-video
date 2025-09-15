@@ -1,7 +1,7 @@
 from ..LLMInterface import LLMInterface
 from ..LLMEnums import GeminiEnums, DocumentTypeEnum
 from google import genai
-from google.genai.types import EmbedContentConfig, GenerateContentConfig, GenerationConfig, Content, Part
+from google.genai.types import EmbedContentConfig, GenerateContentConfig
 
 from utils import logging
 
@@ -25,14 +25,14 @@ class GeminiProvider(LLMInterface):
         self.enums = GeminiEnums
         self.logger = logging.get_logger(__name__)
 
-    def set_generation_model(self, generation_model_id: str):
-        self.generation_model_id = generation_model_id
+    def set_generation_model(self, model_id: str):
+        self.generation_model_id = model_id
     
-    def set_embedding_model(self, embedding_model_id: str, embedding_size: int):
-        self.embedding_model_id = embedding_model_id
+    def set_embedding_model(self, model_id: str, embedding_size: int):
+        self.embedding_model_id = model_id
         self.embedding_size = embedding_size
   
-    def process_text(self, text: str):
+    async def process_text(self, text: str):
         return text[:self.default_max_input_characters].strip()
 
     async def generate(self, user_prompt: str, system_prompt: str, max_output_tokens: int=None, temperature: float=None):
@@ -53,7 +53,7 @@ class GeminiProvider(LLMInterface):
 
             chat = self.client.aio.chats.create(model=self.generation_model_id)
             response = await chat.send_message(
-                message=await self.process_text(user_prompt),
+                message=user_prompt,
                 config=config
             )
 

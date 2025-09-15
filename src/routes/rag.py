@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Body, status
 from fastapi.responses import JSONResponse
-from src.controllers import RAGController
-from src.models import VideoModel
+from controllers import RAGController
+from models import VideoModel
 from .schema import SearchRequest
 from utils.app_enums import ResponseSignals
 from utils.logging import get_logger
@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 @rag_router.post("/answer")
 async def answer_rag(request: Request, video_id: str, search_request: SearchRequest):
     
-    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
     video = await video_model.get_video_by_ID(video_id=video_id)
 
     rag_controller = RAGController(

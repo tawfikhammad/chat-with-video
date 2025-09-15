@@ -21,7 +21,7 @@ class settings(BaseSettings):
 
     DEFAULT_MAX_INPUT_CHARACTERS: int
     DEFAULT_MAX_TOKENS: int
-    DEFAULT_TEMPERATURE: int
+    DEFAULT_TEMPERATURE: float
 
     VECTOR_DB_BACKEND : str
     VECTOR_DB_PATH : str

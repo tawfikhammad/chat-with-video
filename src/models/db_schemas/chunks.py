@@ -5,7 +5,7 @@ from bson.objectid import ObjectId
 class Chunk(BaseModel):
     id: Optional[ObjectId] = Field(None, alias="_id")
     chunk_text: str = Field(..., min_length=1)
-    chunk_id: int = Field(..., ge=0)
+    chunk_index: int = Field(..., ge=0)
     chunk_video_id: ObjectId
     
     class Config:

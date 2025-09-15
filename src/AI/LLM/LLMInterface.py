@@ -3,11 +3,11 @@ from abc import ABC, abstractmethod
 class LLMInterface(ABC):
 
     @abstractmethod
-    def set_genration_model(self, genration_model_id: str ):
+    def set_generation_model(self, model_id: str):
         pass
 
     @abstractmethod
-    def set_embedding_model(self, embedding_model_id: str, embedding_size: int):
+    def set_embedding_model(self, model_id: str, embedding_size: int):
         pass
 
     @abstractmethod

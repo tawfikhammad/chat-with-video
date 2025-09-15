@@ -3,7 +3,8 @@ from models.db_schemas import Video, Chunk
 from AI.LLM.LLMEnums import DocumentTypeEnum
 from typing import List
 import json
-
+from utils import logging
+logger = logging.get_logger(__name__)
 
 class RAGController(BaseController):
 
@@ -44,14 +45,14 @@ class RAGController(BaseController):
             ]
 
             if len(vectors) != len(texts):
-                self.logger.error(f"Error generating embedding vectors for chunks")
+                logger.error(f"Error generating embedding vectors for chunks")
                 return False
             
             if not all(vectors):
-                self.logger.error(f"Error generating some embedding vectors for chunks")
+                logger.error(f"Error generating some embedding vectors for chunks")
                 return False
-            
-            self.logger.info(f"Generated {len(vectors)} embedding vectors for {len(texts)} chunks")
+
+            logger.info(f"Generated {len(vectors)} embedding vectors for {len(texts)} chunks")
 
             # step3: create collection if not exists
             _ = await self.vectordb_client.create_collection(
@@ -61,18 +62,21 @@ class RAGController(BaseController):
             )
 
             # step4: insert into vector db
-            _ = await self.vectordb_client.insert_many(
+            is_inserted = await self.vectordb_client.insert_many(
                 collection_name=collection_name,
                 texts=texts,
                 vectors=vectors,
                 record_ids=chunks_ids,
             )
+            if not is_inserted:
+                logger.error(f"Error inserting items into vector DB collection: {collection_name}")
+                return False
 
-            self.logger.info(f"Inserted {len(texts)} items into vector DB collection: {collection_name}")
+            logger.info(f"Inserted {len(texts)} items into vector DB collection: {collection_name}")
             return True
         
         except Exception as e:
-            self.logger.error(f"Error indexing into vector DB: {e}")
+            logger.error(f"Error indexing into vector DB: {e}")
             return False
 
     async def search_vector_db_collection(self, video: Video, text: str, limit: int = 5):
@@ -86,24 +90,24 @@ class RAGController(BaseController):
                 document_type=DocumentTypeEnum.QUERY.value)
 
             if not vector or len(vector) == 0:
-                self.logger.error(f"Error generating embedding vector for text: {text}")
+                logger.error(f"Error generating embedding vector for text: {text}")
                 return None
 
             # do semantic search
             results = await self.vectordb_client.search(
                 collection_name=collection_name,
-                vector=vector,
+                query_vector=vector,
                 limit=limit)
 
             if not results:
-                self.logger.error(f"No results found for vector DB search")
+                logger.error(f"No results found for vector DB search")
                 return None
 
-            self.logger.info(f"Found {len(results)} results from vector DB search")
+            logger.info(f"Found {len(results)} results from vector DB search")
             return results
         
         except Exception as e:
-            self.logger.error(f"Error searching vector DB: {e}")
+            logger.error(f"Error searching vector DB: {e}")
             return None
     
     async def answer_rag_question(self, video: Video, query: str, limit: int = 5):
@@ -148,5 +152,5 @@ class RAGController(BaseController):
             return answer, full_prompt
 
         except Exception as e:
-            self.logger.error(f"Error answering RAG question: {e}")
+            logger.error(f"Error answering RAG question: {e}")
             return None, None

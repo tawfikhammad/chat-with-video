@@ -1,9 +1,8 @@
-version: '3.5'
 services:
-  mongodb:
+  vidbot_mongodb:
     image: mongo:6.0-jammy
 
-    container_name: mongodb
+    container_name: vidbot_mongodb
 
     ports:
       - "27017:27017"
@@ -13,7 +12,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
 
     volumes:
-      - mongodb:/data/db
+      - vidbot_mongodb:/data/db
 
     networks:
       - backend
@@ -25,4 +24,4 @@ networks:
   backend:
 
 volumes:
-  mongodb:
+  vidbot_mongodb:

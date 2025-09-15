@@ -24,11 +24,11 @@ class OpenAIProvider(LLMInterface):
         self.enums = OpenAIEnums
         self.logger = logging.get_logger(__name__)
 
-    def set_generation_model(self, generation_model_id: str):
-        self.generation_model_id = generation_model_id
+    def set_generation_model(self, model_id: str):
+        self.generation_model_id = model_id
 
-    def set_embedding_model(self, embedding_model_id: str, embedding_size: int):
-        self.embedding_model_id = embedding_model_id
+    def set_embedding_model(self, model_id: str, embedding_size: int):
+        self.embedding_model_id = model_id
         self.embedding_size = embedding_size
 
     async def process_text(self, text: str):
