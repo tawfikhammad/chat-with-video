@@ -1,2 +1,1 @@
-from .data import ProcessRequest
-from rag import PushRequest, SearchRequest
+from .request_schemas import PushRequest, SearchRequest, ProcessRequest
