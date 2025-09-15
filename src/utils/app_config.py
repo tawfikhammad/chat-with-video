@@ -12,7 +12,6 @@ class settings(BaseSettings):
     EMBEDDING_BACKEND : str
 
     OPENAI_API_KEY: str
-    OPENAI_API_URL: str
     COHERE_API_KEY: str
     GEMINI_API_KEY: str
 
@@ -20,9 +19,9 @@ class settings(BaseSettings):
     EMBEDDING_MODEL_ID: str
     EMBEDDING_MODEL_SIZE: int 
 
-    INPUT_DAFAULT_MAX_CHARACTERS: int
-    GENERATION_DAFAULT_MAX_TOKENS: int
-    GENERATION_DAFAULT_TEMPERATURE: int
+    DEFAULT_MAX_INPUT_CHARACTERS: int
+    DEFAULT_MAX_TOKENS: int
+    DEFAULT_TEMPERATURE: int
 
     VECTOR_DB_BACKEND : str
     VECTOR_DB_PATH : str

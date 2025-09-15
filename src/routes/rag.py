@@ -5,11 +5,10 @@ from src.models import VideoModel, ChunkModel
 from src.models.db_schemas import Video
 from .schema import PushRequest, SearchRequest
 from utils.app_enums import ResponseSignals
-import logging
-logger = logging.getLogger('uvicorn.error')
+from utils.logging import get_logger
 
 rag_router = APIRouter()
-rag_controller = RAGController()
+logger = get_logger(__name__)
 
 @rag_router.post("/index/push/")
 async def index_video(request: Request, video_id: str, push_request: PushRequest):
@@ -60,10 +59,12 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
                     "signal": ResponseSignals.INSERT_INTO_VECTORDB_ERROR.value})
-        
+
         inserted_items_count += len(page_chunks)
+        logger.info(f"Inserted {inserted_items_count} items so far...")
         
     return JSONResponse(
+        status_code=status.HTTP_200_OK,
         content={
             "signal": ResponseSignals.INSERT_INTO_VECTORDB_SUCCESS.value,
             "inserted_items_count": inserted_items_count
@@ -106,7 +107,9 @@ async def search_index(request: Request, project_id: str, search_request: Search
     )
 
     results = rag_controller.search_vector_db_collection(
-        video=video, text=search_request.text, limit=search_request.limit
+        video=video,
+        text=search_request.text,
+        limit=search_request.limit
     )
 
     if not results:
@@ -118,9 +121,11 @@ async def search_index(request: Request, project_id: str, search_request: Search
             )
     
     return JSONResponse(
+        status_code=status.HTTP_200_OK,
         content={
             "signal": ResponseSignals.VECTORDB_SEARCH_SUCCESS.value,
-            "results": [result.dict() for result in results]}
+            "results": [result.dict() for result in results]
+        }
     )
 
 @rag_router.post("/index/answer")
@@ -150,6 +155,7 @@ async def answer_rag(request: Request, video_id: str, search_request: SearchRequ
         )
     
     return JSONResponse(
+        status_code=status.HTTP_200_OK,
         content={
             "signal": ResponseSignals.RAG_ANSWER_SUCCESS.value,
             "answer": answer,

@@ -7,18 +7,24 @@ class TextProcessor(BaseController):
 
     def transcript_chunks(self, transcript: list, chunk_size:int= 500, chunk_overlap:int= 150) -> str:
 
-        strings = []
-        for item in transcript:
-            strings.append(f"{item['start']}: {item['text']}")
+        try:
+            strings = []
+            for item in transcript:
+                strings.append(f"{item['start']}: {item['text']}")
 
-        strings = '\n'.join(strings)
+            strings = '\n'.join(strings)
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            length_function=len,
-            is_separator_regex=False,)
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                length_function=len,
+                is_separator_regex=False,)
 
-        chunks = text_splitter.create_documents([strings])
+            chunks = text_splitter.create_documents([strings])
 
-        return chunks    
+            self.logger.info(f"Created {len(chunks)} chunks from transcript")
+            return chunks 
+
+        except Exception as e:
+            self.logger.error(f"Error chunking transcript: {str(e)}")
+            return None   
