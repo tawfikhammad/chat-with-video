@@ -25,7 +25,7 @@ async def startup():
     # embedding client
     app.embedding_client = llm_provider_factory.create(provider=settings.EMBEDDING_BACKEND)
     app.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID,
-                                             embedding_size=settings.EMBEDDING_MODEL_SIZE)
+                                             embedding_size=settings.EMBEDDING_SIZE)
     
     # vector db client
     app.vectordb_client = vdb_provider_factory.create(provider=settings.VECTOR_DB_BACKEND)
