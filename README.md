@@ -1,6 +1,6 @@
 # VidBot - AI-Powered YouTube Video Q&A App
 
-This project allow you chat with any YouTube video just by pasting its URL. It extracts the transcript, chunks the content, embeds it into a vector database, and enables intelligent conversation using LLMs.
+RAG application allows you chat with any YouTube video just by pasting its URL, supported both Arabic and English Languages.
 
 ## Tech Stack
 
@@ -28,6 +28,7 @@ VidBot/
     │   │   ├── LLMInterface.py
     │   │   ├── providers/
     │   │   │   ├── __init__.py
+    |   |   |   ├── CohereProvider.py
     │   │   │   ├── GeminiProvider.py
     │   │   │   └── OpenAIProvider.py
     │   │   └── templates/
@@ -62,6 +63,7 @@ VidBot/
     │   └── schema/
     │       └── __init__.py
     └── utils/
+        ├── logging.py
         ├── app_config.py
         └── app_enums/
             ├── __init__.py
@@ -91,10 +93,10 @@ VidBot/
 | -------------------------- | ------ | -------------------------------- |
 | `/welcome`                 | GET    | App health check                 |
 | `/data/upload_url`         | POST   | Upload a YouTube video URL       |
-| `/{video_id}/index/push/`  | POST   | Index chunks into vector DB      |
-| `/{video_id}/index/info`   | GET    | Get vector DB collection info    |
-| `/{video_id}/index/search` | POST   | Search vector DB using text      |
-| `/{video_id}/index/answer` | POST   | Ask a question and get an answer |
+| `/{video_id}/push/`        | POST   | Index chunks into vector DB      |
+| `/{video_id}/info`         | GET    | Get vector DB collection info    |
+| `/{video_id}/search`       | POST   | Search vector DB using text      |
+| `/{video_id}/answer`       | POST   | Ask a question and get an answer |
 
 
 ## Installation
@@ -132,7 +134,7 @@ $ cp .env.example .env
 
 ```bash
 $ cd docker
-$ sudo docker compose up -d
+$ docker compose up -d
 ```
 
 ## 5- Run the FastAPI server
