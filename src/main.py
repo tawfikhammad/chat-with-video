@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
-from routes import base, data, rag
+from routes import base, data, vdb, rag
 from motor.motor_asyncio import AsyncIOMotorClient
 from utils.app_config import get_settings
 from AI.VectorDB.VDBFactory import VDBFactory
@@ -43,7 +43,9 @@ async def shutdown():
 
 app.include_router(base.base_router)
 app.include_router(data.data_router, prefix="/data", tags=["Data"])
+app.include_router(vdb.vdb_router, prefix="/{video_id}", tags=["VectorDB"])
 app.include_router(rag.rag_router, prefix="/{video_id}", tags=["RAG"])
+
 
 
 if __name__ == "__main__":
