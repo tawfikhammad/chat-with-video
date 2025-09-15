@@ -8,8 +8,11 @@ from utils.logging import get_logger
 logger = get_logger(__name__)
 
 class QdrantProvider(VectorDBInterface):
-    def __init__(self, db_path:str, distance_metric:str):
-        self.db_path = db_path
+    def __init__(self, host: str = "localhost", port: int = 6333, 
+                 grpc_port: int = 6334, distance_metric: str="cosine"):
+        self.host = host
+        self.port = port
+        self.grpc_port = grpc_port
         self.distance_metric = None
         self.client = None
 
@@ -19,7 +22,11 @@ class QdrantProvider(VectorDBInterface):
             self.distance_metric = models.Distance.DOT
 
     async def connect(self):
-        self.client = AsyncQdrantClient(path=self.db_path)
+        self.client = AsyncQdrantClient(
+                host=self.host,
+                port=self.port,
+                prefer_grpc=False,  # Use HTTP instead of gRPC
+        )
         logger.info("Connected to Qdrant database.")
 
     async def disconnect(self):
