@@ -24,7 +24,9 @@ class settings(BaseSettings):
     DEFAULT_TEMPERATURE: float
 
     VECTOR_DB_BACKEND : str
-    VECTOR_DB_PATH : str
+    VECTOR_DB_HOST : str
+    VECTOR_DB_PORT : int
+    VECTOR_DB_GRPC_PORT : int
     VECTOR_DB_DISTANCE_METHOD : str
 
     PRIMARY_LANG : str = "en"

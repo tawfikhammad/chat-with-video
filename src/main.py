@@ -45,8 +45,3 @@ app.include_router(base.base_router)
 app.include_router(data.data_router, prefix="/data", tags=["Data"])
 app.include_router(vdb.vdb_router, prefix="/{video_id}", tags=["VectorDB"])
 app.include_router(rag.rag_router, prefix="/{video_id}", tags=["RAG"])
-
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
