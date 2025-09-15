@@ -5,7 +5,7 @@ class TextProcessor(BaseController):
     def __init__(self):
         super().__init__()
 
-    def transcript_chunks(self, transcript: list, chunk_size:int= 500, chunk_overlap:int= 150) -> str:
+    async def transcript_chunks(self, transcript: list, chunk_size:int= 500, chunk_overlap:int= 150) -> str:
 
         try:
             strings = []

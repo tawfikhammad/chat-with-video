@@ -13,7 +13,7 @@ class DataController(BaseController):
         super().__init__()
         self.video_url = video_url
 
-    def get_video_id(self) -> str:
+    async def get_video_id(self) -> str:
     
         pattern = r'^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w\-_]{11})(?:\S+)?$'
         match = re.match(pattern, self.video_url)
@@ -24,7 +24,7 @@ class DataController(BaseController):
             self.logger.error("Failed to extract video ID from URL")
             return None
 
-    def get_video_metadata(self, video_id: str) -> Dict:
+    async def get_video_metadata(self, video_id: str) -> Dict:
 
         try:
             url = "https://www.googleapis.com/youtube/v3/videos"
@@ -58,8 +58,8 @@ class DataController(BaseController):
         except Exception as e:
             self.logger.error(f"Error fetching video metadata: {str(e)}")
             return None
-    
-    def get_video_transcript(self, video_id: str) -> Optional[List[dict]]:
+
+    async def get_video_transcript(self, video_id: str) -> Optional[List[dict]]:
 
         try:
             languages = ['en', 'en-US', 'en-GB', 'a.en']

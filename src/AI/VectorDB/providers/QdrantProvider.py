@@ -1,10 +1,11 @@
-from qdrant_client import QdrantClient
+from qdrant_client import AsyncQdrantClient
 from qdrant_client.http import models
 from ..VDBInterface import VDBInterface
 from models.db_schemas import RetrievedDocument
-import logging
 from typing import List
 import uuid
+from utils.logging import get_logger
+logger = get_logger(__name__)
 
 class QdrantProvider(VDBInterface):
     def __init__(self, db_path:str, distance_metric:str):
@@ -17,54 +18,54 @@ class QdrantProvider(VDBInterface):
         elif distance_metric == "dot":
             self.distance_metric = models.Distance.DOT
 
-    def connect(self):
-        self.client = QdrantClient(path=self.db_path)
-        logging.info("Connected to Qdrant database.")
+    async def connect(self):
+        self.client = AsyncQdrantClient(path=self.db_path)
+        logger.info("Connected to Qdrant database.")
 
-    def disconnect(self):
+    async def disconnect(self):
         if self.client:
-            self.client.close()
-            logging.info("Disconnected from Qdrant database.")
+            await self.client.close()
+            logger.info("Disconnected from Qdrant database.")
 
-    def is_collection_exist(self, collection_name) -> bool:
-        return self.client.collection_exists(collection_name)
+    async def is_collection_exist(self, collection_name) -> bool:
+        return await self.client.collection_exists(collection_name)
 
-    def list_all_collections(self) -> List: 
-        return self.client.get_collections()
-    
-    def get_collection_info(self, collection_name):
-        if self.client.collection_exists(collection_name):
-            return self.client.get_collection(collection_name=collection_name)
+    async def list_all_collections(self) -> List: 
+        return await self.client.get_collections()
+
+    async def get_collection_info(self, collection_name):
+        if await self.client.collection_exists(collection_name):
+            return await self.client.get_collection(collection_name=collection_name)
         else:
-            logging.warning(f"Collection '{collection_name}' does not exist.")
+            logger.warning(f"Collection '{collection_name}' does not exist.")
             return None
-        
-    def delete_collection(self, collection_name):
-        if self.client.collection_exists(collection_name):
-            self.client.delete_collection(collection_name=collection_name)
-            logging.info(f"Collection '{collection_name}' deleted.")
+
+    async def delete_collection(self, collection_name):
+        if await self.client.collection_exists(collection_name):
+            await self.client.delete_collection(collection_name=collection_name)
+            logger.info(f"Collection '{collection_name}' deleted.")
         else:
-            logging.warning(f"Collection '{collection_name}' does not exist.")
+            logger.warning(f"Collection '{collection_name}' does not exist.")
 
-    def create_collection(self, collection_name: str, embedding_size: int, do_reset: bool = False):
+    async def create_collection(self, collection_name: str, embedding_size: int, do_reset: bool = False):
         if do_reset:
-            _ = self.delete_collection(collection_name)
+            _ = await self.delete_collection(collection_name)
 
-        if not self.client.collection_exists(collection_name):
-            _ = self.client.create_collection(
+        if not await self.client.collection_exists(collection_name):
+            _ = await self.client.create_collection(
                 collection_name=collection_name,
                 vector_size= embedding_size,
                 distance=self.distance_metric,
             )
-            logging.info(f"Collection '{collection_name}' created.")
+            logger.info(f"Collection '{collection_name}' created.")
         else:
-            logging.warning(f"Collection '{collection_name}' already exists.")
-        
-    def insert_one(self, collection_name:str, text:str, vector:list, record_id:int = None):
-        
-        if self.client.collection_exists(collection_name):
+            logger.warning(f"Collection '{collection_name}' already exists.")
+
+    async def insert_one(self, collection_name:str, text:str, vector:list, record_id:int = None):
+
+        if await self.client.collection_exists(collection_name):
             try:
-                self.client.upsert(
+                await self.client.upsert(
                     collection_name=collection_name,
                     points=[
                         models.PointStruct(
@@ -72,19 +73,19 @@ class QdrantProvider(VDBInterface):
                         vector= vector, 
                         payload= {"text": text}
                 )])
-                logging.info(f"Inserted one document into collection '{collection_name}'.")
+                logger.info(f"Inserted one document into collection '{collection_name}'.")
 
             except Exception as e:
-                logging.error(f"Error inserting document into collection '{collection_name}': {e}")
+                logger.error(f"Error inserting document into collection '{collection_name}': {e}")
                 return False
         else:
-            logging.warning(f"Collection '{collection_name}' does not exist. Cannot insert document.")
+            logger.warning(f"Collection '{collection_name}' does not exist. Cannot insert document.")
 
-    def insert_many(self, collection_name:str, texts:list, vectors:list,
+    async def insert_many(self, collection_name:str, texts:list, vectors:list,
                 record_ids:list = None, batch_size:int = 50):
-        
-        if not self.client.collection_exists(collection_name):
-            logging.error(f"Collection '{collection_name}' does not exist.")
+
+        if not await self.client.collection_exists(collection_name):
+            logger.error(f"Collection '{collection_name}' does not exist.")
             return False
 
         record_ids = record_ids or [str(uuid.uuid4()) for _ in range(len(texts))]
@@ -101,42 +102,44 @@ class QdrantProvider(VDBInterface):
 
                     batch_points.append(point)
 
-                self.client.upsert(
+                await self.client.upsert(
                     collection_name=collection_name,
                     points=batch_points,
                     batch_size=batch_size
                 )
 
-                logging.info(f"Inserted batch {i} to {i + len(batch_points)} into collection '{collection_name}'")
+                logger.info(f"Inserted batch {i} to {i + len(batch_points)} into collection '{collection_name}'")
 
             return True
 
         except Exception as e:
-            logging.error(f"Error inserting into collection '{collection_name}': {e}")
-            return False
-        
-    
-    def search(self, collection_name:str, query_vector:list, limit:int = 5):
+            logger.error(f"Error inserting into collection '{collection_name}': {e}")
+            return False 
+
+    async def search(self, collection_name:str, query_vector:list, limit:int = 5):
         try:
-            search_result = self.client.search(
+            search_result = await self.client.search(
                 collection_name=collection_name,
                 query_vector=query_vector,
                 limit=limit
             )
 
             if not search_result or len(search_result) == 0:
-                logging.warning(f"No results found in collection '{collection_name}'.")
+                logger.warning(f"No results found in collection '{collection_name}'.")
                 return None
 
-            retrieved_reselt = [
-            RetrievedDocument(**{
-                "score": result.score,
-                "text": result.payload["text"],})
-            for result in search_result]
+            retrieved_result = [
+                RetrievedDocument(**{
+                            "score": result.score,
+                            "text": result.payload["text"],
+                        }
+                    )
+                for result in search_result
+            ]
 
-            logging.info(f"Search completed in collection '{collection_name}'.")
-            return retrieved_reselt
+            logger.info(f"Search completed in collection '{collection_name}'.")
+            return retrieved_result
 
         except Exception as e:
-            logging.error(f"Error searching in collection '{collection_name}': {e}")
+            logger.error(f"Error searching in collection '{collection_name}': {e}")
             return None

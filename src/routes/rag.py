@@ -47,7 +47,7 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
         chunks_ids =  list(range(idx, idx + len(page_chunks)))
         idx += len(page_chunks)
         
-        is_inserted = rag_controller.index_into_vector_db(
+        is_inserted = await rag_controller.index_into_vector_db(
             video=video,
             chunks=page_chunks,
             chunks_ids=chunks_ids,
@@ -84,7 +84,7 @@ async def get_video_index_info(request: Request, project_id: str):
         template_parser=request.app.template_parser,
     )
 
-    collection_info = rag_controller.get_vector_db_collection_info(video= video)
+    collection_info = await rag_controller.get_vector_db_collection_info(video= video)
 
     return JSONResponse(
         content={
@@ -106,7 +106,7 @@ async def search_index(request: Request, project_id: str, search_request: Search
         template_parser=request.app.template_parser,
     )
 
-    results = rag_controller.search_vector_db_collection(
+    results = await rag_controller.search_vector_db_collection(
         video=video,
         text=search_request.text,
         limit=search_request.limit
@@ -141,7 +141,7 @@ async def answer_rag(request: Request, video_id: str, search_request: SearchRequ
         template_parser=request.app.template_parser,
     )
 
-    answer, full_prompt, chat_history = rag_controller.answer_rag_question(
+    answer, full_prompt = await rag_controller.answer_rag_question(
         video=video,
         query=search_request.text,
         limit=search_request.limit,
@@ -160,6 +160,5 @@ async def answer_rag(request: Request, video_id: str, search_request: SearchRequ
             "signal": ResponseSignals.RAG_ANSWER_SUCCESS.value,
             "answer": answer,
             "full_prompt": full_prompt,
-            "chat_history": chat_history
         }
     )

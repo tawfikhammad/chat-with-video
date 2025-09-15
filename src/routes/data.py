@@ -16,7 +16,7 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
 
     try: 
         data_controller = DataController(video_url=process_request.video_url)
-        video_id = data_controller.get_video_id()
+        video_id = await data_controller.get_video_id()
 
         if not video_id:
             logger.error("Invalid video URL provided")
@@ -25,7 +25,7 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
                 content={"signal": "INVALID_VIDEO_URL"}
             )
     
-        metadata = data_controller.get_video_metadata(video_id=video_id)
+        metadata = await data_controller.get_video_metadata(video_id=video_id)
 
         video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
         video = await video_model.create_video(
@@ -38,7 +38,7 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
             )
         )
 
-        transcript = data_controller.get_video_transcript(video_id=video_id)
+        transcript = await data_controller.get_video_transcript(video_id=video_id)
         if not transcript:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,7 +46,7 @@ async def get_data(request:Request, process_request:ProcessRequest, settings:set
             )
 
         text_processor = TextProcessor()
-        chunks = text_processor.transcript_chunks(transcript=transcript)
+        chunks = await text_processor.transcript_chunks(transcript=transcript)
         if not chunks:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,

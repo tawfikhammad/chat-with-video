@@ -16,30 +16,30 @@ class RAGController(BaseController):
         self.embedding_client = embedding_client
         self.template_parser = template_parser
 
-    def create_collection_name(self, video_id: str):
+    async def create_collection_name(self, video_id: str):
         return f"collection_{video_id}".strip()
     
-    def reset_vector_db_collection(self, video: Video):
-        collection_name = self.create_collection_name(video_id=video.video_id)
-        return self.vectordb_client.delete_collection(collection_name=collection_name)
-    
-    def get_vector_db_collection_info(self, video: Video):
-        collection_name = self.create_collection_name(video_id=video.video_id)
-        collection_info = self.vectordb_client.get_collection_info(collection_name=collection_name)
+    async def reset_vector_db_collection(self, video: Video):
+        collection_name = await self.create_collection_name(video_id=video.video_id)
+        return await self.vectordb_client.delete_collection(collection_name=collection_name)
+
+    async def get_vector_db_collection_info(self, video: Video):
+        collection_name = await self.create_collection_name(video_id=video.video_id)
+        collection_info = await self.vectordb_client.get_collection_info(collection_name=collection_name)
 
         return json.loads(json.dumps(collection_info, default=lambda x: x.__dict__))
     
-    def index_into_vector_db(self, video: Video, chunks: List[Chunk],
+    async def index_into_vector_db(self, video: Video, chunks: List[Chunk],
                                    chunks_ids: List[int], 
                                    do_reset: bool = False):
         try:
             # step1: get collection name
-            collection_name = self.create_collection_name(video_id=video.video_id)
+            collection_name = await self.create_collection_name(video_id=video.video_id)
 
             # step2: manage items
             texts = [c.chunk_text for c in chunks]
             vectors = [
-                self.embedding_client.embed(text=text, document_type=DocumentTypeEnum.DOCUMENT.value)
+                await self.embedding_client.embed(text=text, document_type=DocumentTypeEnum.DOCUMENT.value)
                 for text in texts
             ]
 
@@ -54,14 +54,14 @@ class RAGController(BaseController):
             self.logger.info(f"Generated {len(vectors)} embedding vectors for {len(texts)} chunks")
 
             # step3: create collection if not exists
-            _ = self.vectordb_client.create_collection(
+            _ = await self.vectordb_client.create_collection(
                 collection_name=collection_name,
                 embedding_size=self.embedding_client.embedding_size,
                 do_reset=do_reset,
             )
 
             # step4: insert into vector db
-            _ = self.vectordb_client.insert_many(
+            _ = await self.vectordb_client.insert_many(
                 collection_name=collection_name,
                 texts=texts,
                 vectors=vectors,
@@ -75,13 +75,13 @@ class RAGController(BaseController):
             self.logger.error(f"Error indexing into vector DB: {e}")
             return False
 
-    def search_vector_db_collection(self, video: Video, text: str, limit: int = 5):
+    async def search_vector_db_collection(self, video: Video, text: str, limit: int = 5):
 
         try: 
-            collection_name = self.create_collection_name(video_id=video.video_id)
+            collection_name = await self.create_collection_name(video_id=video.video_id)
 
             # get text embedding vector
-            vector = self.embedding_client.embed(
+            vector = await self.embedding_client.embed(
                 text=text,
                 document_type=DocumentTypeEnum.QUERY.value)
 
@@ -90,7 +90,7 @@ class RAGController(BaseController):
                 return None
 
             # do semantic search
-            results = self.vectordb_client.search(
+            results = await self.vectordb_client.search(
                 collection_name=collection_name,
                 vector=vector,
                 limit=limit)
@@ -106,19 +106,19 @@ class RAGController(BaseController):
             self.logger.error(f"Error searching vector DB: {e}")
             return None
     
-    def answer_rag_question(self, video: Video, query: str, limit: int = 5):
+    async def answer_rag_question(self, video: Video, query: str, limit: int = 5):
         
         try:
-            answer, full_prompt, chat_history = None, None, None
+            answer, full_prompt = None, None
 
             # retrieve related documents
-            retrieved_documents = self.search_vector_db_collection(
+            retrieved_documents = await self.search_vector_db_collection(
                 video=video,
                 text=query,
                 limit=limit,)
 
             if not retrieved_documents or len(retrieved_documents) == 0:
-                return answer, full_prompt, chat_history
+                return answer, full_prompt
             
             # step2: Construct LLM prompt
             system_prompt = self.template_parser.get("rag", "system_prompt")
@@ -135,22 +135,15 @@ class RAGController(BaseController):
                         "query": query,
                 })
 
-            # Construct Generation Client Prompts
-            chat_history = [
-                self.generation_client.construct_prompt(
-                    prompt=system_prompt,
-                    role=self.generation_client.enums.SYSTEM.value,)
-            ]
-
             full_prompt = "\n\n".join([documents_prompts,  footer_prompt])
 
             # Retrieve the Answer
-            answer = self.generation_client.generate(
-                prompt=full_prompt,
-                chat_history=chat_history
+            answer = await self.generation_client.generate(
+                user_prompt=full_prompt,
+                system_prompt=system_prompt
             )
 
-            return answer, full_prompt, chat_history
+            return answer, full_prompt
 
         except Exception as e:
             self.logger.error(f"Error answering RAG question: {e}")
