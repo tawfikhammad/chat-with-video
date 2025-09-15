@@ -1,0 +1,24 @@
+name: second_workflow
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: building image
+        run: docker build -t tawfikhammad/vidbot:latest .
+
+      - name: Login to DockerHub
+        run: docker login -u tawfikhammad -p ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Push to DockerHub
+        run: docker push tawfikhammad/vidbot:latest
