@@ -93,7 +93,7 @@ VidBot/
 | -------------------------- | ------ | -------------------------------- |
 | `/welcome`                 | GET    | App health check                 |
 | `/data/upload_url`         | POST   | Upload a YouTube video URL       |
-| `/{video_id}/push/`        | POST   | Index chunks into vector DB      |
+| `/{video_id}/index/`       | POST   | Index chunks into vector DB      |
 | `/{video_id}/info`         | GET    | Get vector DB collection info    |
 | `/{video_id}/search`       | POST   | Search vector DB using text      |
 | `/{video_id}/answer`       | POST   | Ask a question and get an answer |
