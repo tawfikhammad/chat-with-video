@@ -2,8 +2,8 @@ from .base_model import BaseModel
 from utils.app_enums import DatabaseEnums
 from .db_schemas import Video
 
-import logging
-logger = logging.getLogger('unicorn.errors')
+from utils import logging
+logger = logging.get_logger(__name__)
 
 class VideoModel(BaseModel):
     def __init__(self, db_client: object):
@@ -14,6 +14,7 @@ class VideoModel(BaseModel):
     async def get_instance(cls, db_client: object):
         instance = cls(db_client=db_client)
         await instance.ensure_indexes()
+        logger.info("VideoModel instance created and indexes ensured.")
         return instance
 
     async def ensure_indexes(self):
@@ -23,24 +24,33 @@ class VideoModel(BaseModel):
                 await self.collection.create_index(
                     index["key"],
                     name=index["name"],
-                    unique=index["unique"])
+                    unique=index["unique"]
+                )
                 
     async def create_video(self, video: Video):
-        existing_video  = await self.get_video_by_ID(video.video_id)
-        if existing_video :
-            logger.warning(f"Video with ID {video.video_id} already exists in the database.")
-            return existing_video 
-        res = await self.collection.insert_one(video.dict(by_alias=True, exclude_unset=True))
-        video.id = res.inserted_id
-        return video
+        try:
+            existing_video  = await self.get_video(video.video_id)
+            if existing_video :
+                logger.warning(f"Video with ID {video.video_id} already exists in the database.")
+                return existing_video 
+            res = await self.collection.insert_one(video.dict(by_alias=True, exclude_unset=True))
+            video.id = res.inserted_id
+            return video
+        except Exception as e:
+            logger.error(f"Error creating video record: {e}")
+            raise
     
-    async def get_video_by_ID(self, video_id: str):
-        record = await self.collection.find_one({"video_id": video_id})
-        if record is None:
-            return None
-        return Video(**record)
-    
-    async def delete_video_by_ID(self, video_id: str):
+    async def get_video(self, video_id: str):
+        try:
+            record = await self.collection.find_one({"video_id": video_id})
+            if record is None:
+                return None
+            return Video(**record)
+        except Exception as e:
+            logger.error(f"Error fetching video by ID {video_id}: {e}")
+            raise
+
+    async def delete_video(self, video_id: str):
         result = await self.collection.delete_one({"video_id": video_id})
         return result.deleted_count
     

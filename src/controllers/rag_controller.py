@@ -24,102 +24,82 @@ class RAGController(BaseController):
         collection_name = await self.create_collection_name(video_id=video.video_id)
         return await self.vectordb_client.delete_collection(collection_name=collection_name)
 
-    async def get_vector_db_collection_info(self, video: Video):
+    async def get_vdb_collection_info(self, video: Video):
         collection_name = await self.create_collection_name(video_id=video.video_id)
         collection_info = await self.vectordb_client.get_collection_info(collection_name=collection_name)
 
         return json.loads(json.dumps(collection_info, default=lambda x: x.__dict__))
     
-    async def index_into_vector_db(self, video: Video, chunks: List[Chunk],
-                                   chunks_ids: List[int], 
-                                   do_reset: bool = False):
+    async def index_into_vdb(
+            self,
+            chunks: List[Chunk],
+            collection_name: str,
+    ):
         try:
-            # step1: get collection name
-            collection_name = await self.create_collection_name(video_id=video.video_id)
-
-            # step2: manage items
+            ids = [str(chunk.id) for chunk in chunks]
             texts = [c.chunk_text for c in chunks]
             vectors = [
                 await self.embedding_client.embed(text=text, document_type=DocumentTypeEnum.DOCUMENT.value)
                 for text in texts
             ]
 
-            if len(vectors) != len(texts):
-                logger.error(f"Error generating embedding vectors for chunks")
-                return False
-            
-            if not all(vectors):
+            if not vectors or len(vectors) == 0:
                 logger.error(f"Error generating some embedding vectors for chunks")
-                return False
+                raise
 
             logger.info(f"Generated {len(vectors)} embedding vectors for {len(texts)} chunks")
 
-            # step3: create collection if not exists
-            _ = await self.vectordb_client.create_collection(
-                collection_name=collection_name,
-                embedding_size=self.embedding_client.embedding_size,
-                do_reset=do_reset,
-            )
-
-            # step4: insert into vector db
-            is_inserted = await self.vectordb_client.insert_many(
+            # insert into vector db
+            await self.vectordb_client.insert_many(
                 collection_name=collection_name,
                 texts=texts,
                 vectors=vectors,
-                record_ids=chunks_ids,
+                record_ids=ids,
             )
-            if not is_inserted:
-                logger.error(f"Error inserting items into vector DB collection: {collection_name}")
-                return False
-
             logger.info(f"Inserted {len(texts)} items into vector DB collection: {collection_name}")
-            return True
         
         except Exception as e:
             logger.error(f"Error indexing into vector DB: {e}")
-            return False
+            raise
 
-    async def search_vector_db_collection(self, video: Video, text: str, limit: int = 5):
+    async def search_query(self, video: Video, query: str, limit: int = 5):
 
         try: 
             collection_name = await self.create_collection_name(video_id=video.video_id)
 
             # get text embedding vector
             vector = await self.embedding_client.embed(
-                text=text,
+                text=query,
                 document_type=DocumentTypeEnum.QUERY.value)
 
             if not vector or len(vector) == 0:
-                logger.error(f"Error generating embedding vector for text: {text}")
-                return None
+                logger.error(f"Error generating embedding vector for query: {query}")
+                raise
 
             # do semantic search
             results = await self.vectordb_client.search(
                 collection_name=collection_name,
                 query_vector=vector,
-                limit=limit)
+                limit=limit
+            )
 
-            if not results:
-                logger.error(f"No results found for vector DB search")
-                return None
-
-            logger.info(f"Found {len(results)} results from vector DB search")
             return results
         
         except Exception as e:
             logger.error(f"Error searching vector DB: {e}")
-            return None
+            raise
     
-    async def answer_rag_question(self, video: Video, query: str, limit: int = 5):
+    async def answer_question(self, video: Video, query: str, limit: int = 5):
         
         try:
             answer, full_prompt = None, None
 
             # retrieve related documents
-            retrieved_documents = await self.search_vector_db_collection(
+            retrieved_documents = await self.search_query(
                 video=video,
-                text=query,
-                limit=limit,)
+                query=query,
+                limit=limit
+            )
 
             if not retrieved_documents or len(retrieved_documents) == 0:
                 return answer, full_prompt
@@ -139,7 +119,7 @@ class RAGController(BaseController):
                 "title": video.title,
                 "author": video.author,
                 "query": query,
-                })
+            })
 
             full_prompt = "\n\n".join([documents_prompts,  footer_prompt])
 
@@ -153,4 +133,4 @@ class RAGController(BaseController):
 
         except Exception as e:
             logger.error(f"Error answering RAG question: {e}")
-            return None, None
+            raise

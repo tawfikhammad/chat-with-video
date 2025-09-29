@@ -30,4 +30,4 @@ class TextProcessor(BaseController):
 
         except Exception as e:
             logger.error(f"Error chunking transcript: {str(e)}")
-            return None   
+            raise 
