@@ -25,7 +25,7 @@ class DataController(BaseController):
             return match.group(1)
         else:
             logger.error("Failed to extract video ID from URL")
-            return None
+            raise
 
     async def get_video_metadata(self, video_id: str) -> Dict:
 
@@ -60,7 +60,7 @@ class DataController(BaseController):
         
         except Exception as e:
             logger.error(f"Error fetching video metadata: {str(e)}")
-            return None
+            raise
 
     def get_video_transcript(self, video_id: str) -> Optional[List[dict]]:
 
@@ -82,15 +82,15 @@ class DataController(BaseController):
     
         except NoTranscriptFound:
             logger.error(f"No transcript found for video ID: {video_id}")
-            return None
+            raise
         except TranscriptsDisabled:
             logger.error(f"Transcripts are disabled for video ID: {video_id}")
-            return None
+            raise
         except VideoUnavailable:
             logger.error(f"Video unavailable for ID: {video_id}")
-            return None
+            raise
         except Exception as e:
             logger.error(f"Error retrieving transcript: {str(e)}")
-            return None
+            raise
         
 
