@@ -4,6 +4,8 @@ from .db_schemas import Chunk, Video
 from bson import ObjectId
 from pymongo import InsertOne
 from typing import List
+from utils.logging import get_logger
+logger = get_logger(__name__)
 
 class ChunkModel(BaseModel):
     def __init__(self, db_client):
@@ -48,9 +50,12 @@ class ChunkModel(BaseModel):
         return result.deleted_count
     
     async def get_video_chunks(self, video_id: ObjectId, page_no: int = 1, limit: int = 10) -> List[Chunk]:
-        skip = (page_no - 1) * limit
-        cursor = self.collection.find({"chunk_video_id": video_id}).skip(skip).limit(limit)
-        
-        docs = await cursor.to_list(length=limit)
-        return [Chunk(**doc) for doc in docs]
+        try:
+            skip = (page_no - 1) * limit
+            cursor = self.collection.find({"chunk_video_id": video_id}).skip(skip).limit(limit)
+            docs = await cursor.to_list(length=limit)
+            return [Chunk(**doc) for doc in docs]
+        except Exception as e:
+            logger.error(f"Error fetching video chunks for video ID {video_id}: {e}")
+            return []
 
