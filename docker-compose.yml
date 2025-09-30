@@ -44,8 +44,8 @@ services:
     volumes:
       - vidbot_mongodb:/data/db
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=admin
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     networks:
       - backend
     restart: always
@@ -56,9 +56,23 @@ services:
       retries: 5
       start_period: 30s
 
+  pgvector:
+    image: pgvector/pgvector:0.8.0-pg17
+    container_name: vidbot_pgvector
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - backend
+    restart: always
+
 networks:
   backend:
 
 volumes:
   vidbot_mongodb:
   vidbot_qdrant:
+  vidbot_pgvector:
