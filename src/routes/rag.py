@@ -10,7 +10,7 @@ logger = logging.get_logger(__name__)
 
 rag_router = APIRouter()
 
-@rag_router.post("/index")
+@rag_router.post("/collections/{video_id}/index")
 async def index_video(request: Request, video_id: str, push_request: PushRequest):
 
     video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
@@ -29,9 +29,9 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
         embedding_client=request.app.embedding_client,
         template_parser=request.app.template_parser,
     )
-    collection_name = await rag_controller.create_collection_name(video_id=video.video_id)
-    await request.app.vectordb_client.create_collection(
-        collection_name=collection_name,
+    collection_name = rag_controller.create_collection_name(video_id=video.video_id)
+    await rag_controller.create_vdb_collection(
+        video_id=video.video_id,
         embedding_size=request.app.embedding_client.embedding_size,
         do_reset=push_request.do_reset,
     )
@@ -41,7 +41,7 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
     inserted_items_count = 0
 
     while has_records:
-        page_chunks = await chunk_model.get_video_chunks(video_id=video.id, page_no=page_no)
+        page_chunks = await chunk_model.get_video_chunks(video=video, page_no=page_no)
         if len(page_chunks):
             logger.info(f"Fetched {len(page_chunks)} chunks from database for page {page_no}")
             page_no += 1
@@ -51,7 +51,7 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
             has_records = False
             break
         
-        await rag_controller.index_into_vdb(
+        await rag_controller.index_into_vdb_collection(
             chunks=page_chunks,
             collection_name=collection_name,
         )
@@ -66,33 +66,7 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
         }
     )
 
-@rag_router.get("/info")
-async def get_video_index_info(request: Request, video_id: str):
-    
-    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
-    video = await video_model.get_video(video_id=video_id)
-    if not video:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={
-                "signal": ResponseSignals.VIDEO_NOT_FOUND.value})
-
-    rag_controller = RAGController(
-        vectordb_client=request.app.vectordb_client,
-        generation_client=request.app.generation_client,
-        embedding_client=request.app.embedding_client,
-        template_parser=request.app.template_parser,
-    )
-    collection_info = await rag_controller.get_vdb_collection_info(video=video)
-
-    return JSONResponse(
-        content={
-            "signal": ResponseSignals.VECTORDB_COLLECTION_RETRIEVED.value,
-            "collection_info": collection_info
-        }
-    )
-
-@rag_router.post("/search")
+@rag_router.post("/collections/{video_id}/search")
 async def search(request: Request, video_id: str, search_request: SearchRequest):
     
     video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
@@ -130,7 +104,7 @@ async def search(request: Request, video_id: str, search_request: SearchRequest)
         }
     )
 
-@rag_router.post("/answer")
+@rag_router.post("/collections/{video_id}/answer")
 async def answer_rag(request: Request, video_id: str, search_request: SearchRequest):
     
     video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)

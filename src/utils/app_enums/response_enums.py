@@ -3,7 +3,12 @@ from enum import Enum
 class ResponseSignals(Enum):
 
     VIDEO_NOT_FOUND = "video not found in db"
+    VIDEO_ALREADY_EXISTS = "video already exists in db"
     VIDEO_PROCESSING_SUCCESS = "video processing success"
+    VIDEO_LIST_EMPTY = "no videos found in db"
+    VIDEO_LIST_FETCH_SUCCESS = "video list fetch success"
+    VIDEO_DELETE_SUCCESS = "video delete success"
+    VIDEO_FETCH_SUCCESS = "video fetch success"
 
     RAG_ANSWER_SUCCESS = "rag answer success"
     RAG_NO_ANSWER = "rag no answer found"

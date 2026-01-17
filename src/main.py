@@ -41,5 +41,5 @@ async def shutdown():
     await app.vectordb_client.disconnect()
 
 app.include_router(base.base_router)
-app.include_router(data.data_router, prefix="/data", tags=["Data"])
-app.include_router(rag.rag_router, prefix="/{video_id}", tags=["RAG"])
+app.include_router(data.data_router, tags=["Data"])
+app.include_router(rag.rag_router, tags=["RAG"])

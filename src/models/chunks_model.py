@@ -45,17 +45,20 @@ class ChunkModel(BaseModel):
             await self.collection.bulk_write(operation)
         return len(chunks)
 
-    async def del_video_chunks(self, video_id: ObjectId):
-        result = await self.collection.delete_many({"chunk_Video_id": video_id})
-        return result.deleted_count
-    
-    async def get_video_chunks(self, video_id: ObjectId, page_no: int = 1, limit: int = 10) -> List[Chunk]:
+    async def del_video_chunks(self, video: Video):
+        try:
+            await self.collection.delete_many({"chunk_video_id": video.id})
+        except Exception as e:
+            logger.error(f"Error deleting chunks for video ID {video.id}: {e}")
+            raise
+
+    async def get_video_chunks(self, video: Video, page_no: int = 1, limit: int = 10) -> List[Chunk]:
         try:
             skip = (page_no - 1) * limit
-            cursor = self.collection.find({"chunk_video_id": video_id}).skip(skip).limit(limit)
+            cursor = self.collection.find({"chunk_video_id": video.id}).skip(skip).limit(limit)
             docs = await cursor.to_list(length=limit)
             return [Chunk(**doc) for doc in docs]
         except Exception as e:
-            logger.error(f"Error fetching video chunks for video ID {video_id}: {e}")
+            logger.error(f"Error fetching video chunks for video ID {video.id}: {e}")
             return []
 
