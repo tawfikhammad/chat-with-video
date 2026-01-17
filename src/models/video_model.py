@@ -51,8 +51,11 @@ class VideoModel(BaseModel):
             raise
 
     async def delete_video(self, video_id: str):
-        result = await self.collection.delete_one({"video_id": video_id})
-        return result.deleted_count
+        try:
+            await self.collection.delete_one({"video_id": video_id})
+        except Exception as e:
+            logger.error(f"Error deleting video by ID {video_id}: {e}")
+            raise
     
     async def get_all_videos(self, page: int=0, limit: int=10):
         """
