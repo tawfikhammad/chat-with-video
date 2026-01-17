@@ -17,26 +17,32 @@ class RAGController(BaseController):
         self.embedding_client = embedding_client
         self.template_parser = template_parser
 
-    async def create_collection_name(self, video_id: str):
+    def create_collection_name(self, video_id: str):
         return f"collection_{video_id}".strip()
     
-    async def reset_vector_db_collection(self, video: Video):
-        collection_name = await self.create_collection_name(video_id=video.video_id)
+    async def reset_vdb_collection(self, video_id: str):
+        collection_name = self.create_collection_name(video_id=video_id)
         return await self.vectordb_client.delete_collection(collection_name=collection_name)
+    
+    async def create_vdb_collection(self, video_id: str, embedding_size: int, do_reset: bool = False):
+        collection_name = self.create_collection_name(video_id=video_id)
+        return await self.vectordb_client.create_collection(
+            collection_name=collection_name,
+            embedding_size=embedding_size,
+            do_reset=do_reset,
+        )
 
-    async def get_vdb_collection_info(self, video: Video):
-        collection_name = await self.create_collection_name(video_id=video.video_id)
+    async def get_vdb_collection_info(self, video_id: str):
+        collection_name = self.create_collection_name(video_id=video_id)
         collection_info = await self.vectordb_client.get_collection_info(collection_name=collection_name)
-
         return json.loads(json.dumps(collection_info, default=lambda x: x.__dict__))
     
-    async def index_into_vdb(
+    async def index_into_vdb_collection(
             self,
             chunks: List[Chunk],
             collection_name: str,
     ):
         try:
-            ids = [str(chunk.id) for chunk in chunks]
             texts = [c.chunk_text for c in chunks]
             vectors = [
                 await self.embedding_client.embed(text=text, document_type=DocumentTypeEnum.DOCUMENT.value)
@@ -54,7 +60,7 @@ class RAGController(BaseController):
                 collection_name=collection_name,
                 texts=texts,
                 vectors=vectors,
-                record_ids=ids,
+                mongodb_ids=[str(c.id) for c in chunks]
             )
             logger.info(f"Inserted {len(texts)} items into vector DB collection: {collection_name}")
         
@@ -65,7 +71,7 @@ class RAGController(BaseController):
     async def search_query(self, video: Video, query: str, limit: int = 5):
 
         try: 
-            collection_name = await self.create_collection_name(video_id=video.video_id)
+            collection_name = self.create_collection_name(video_id=video.video_id)
 
             # get text embedding vector
             vector = await self.embedding_client.embed(
