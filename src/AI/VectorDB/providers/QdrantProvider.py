@@ -103,19 +103,22 @@ class QdrantProvider(VectorDBInterface):
             collection_name:str,
             texts:List[str],
             vectors:List[List[float]],
-            record_ids:List[str] = None,
+            mongodb_ids:List[str] = None,
             batch_size:int = 50):
 
         if not await self.client.collection_exists(collection_name):
             logger.error(f"Collection '{collection_name}' does not exist.")
             raise
 
-        record_ids = record_ids or [str(uuid.uuid4()) for _ in range(len(texts))]
+        record_ids = [str(uuid.uuid4()) for _ in range(len(texts))]
         try:
             for i in range(0, len(texts), batch_size):
                 batch_points = []
                 for j in range(i, min(i + batch_size, len(texts))):
-                    payload = {"text": texts[j]}
+                    payload = {
+                        "text": texts[j],
+                        "mongodb_id": mongodb_ids[j] if mongodb_ids else None
+                    }
 
                     point = models.PointStruct(
                         id=record_ids[j],
