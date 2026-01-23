@@ -1,2 +1,2 @@
-from .video import Video
-from .chunks import Chunk, RetrievedDocument
+from .vidbot.schemas.video import Video
+from .vidbot.schemas.chunk import Chunk, RetrievedDocument
