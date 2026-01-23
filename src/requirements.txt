@@ -9,6 +9,8 @@ langchain-community==0.3.14
 motor==3.6.1       # Async MongoDB driver
 SQLAlchemy==2.0.36
 asyncpg==0.30.0    # Async PostgreSQL driver
+alembic==1.14.0    # Database migrations
+psycopg2==2.9.10   # PostgreSQL adapter
 
 # LLM Providers
 openai==1.30.1

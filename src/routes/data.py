@@ -24,7 +24,7 @@ async def upload_video(request:Request, process_request:ProcessRequest, settings
             content={"signal": ResponseSignals.INVALID_VIDEO_URL.value}
         )
     
-    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
     video = await video_model.get_video(video_id=video_id)
     if video:
         logger.warning(f"Video with ID {video_id} already exists in the database.")
@@ -66,7 +66,7 @@ async def upload_video(request:Request, process_request:ProcessRequest, settings
         ) for i, chunk_text in enumerate(processed_chunks)
     ]
 
-    chunks_model = await ChunkModel.get_instance(db_client=request.app.mongodb_client)
+    chunks_model = await ChunkModel.get_instance(db_client=request.app.db_client)
     await chunks_model.insert_chunks(chunks=chunks)
 
     return JSONResponse(
@@ -80,7 +80,7 @@ async def upload_video(request:Request, process_request:ProcessRequest, settings
 
 @data_router.get("/data/videos")
 async def list_videos(request:Request):
-    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
     videos = await video_model.get_all_videos()
 
     if not videos or len(videos) == 0:
@@ -112,7 +112,7 @@ async def list_videos(request:Request):
 
 @data_router.get("/data/videos/{video_id}")
 async def get_video_details(request:Request, video_id:str):
-    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
     video = await video_model.get_video(video_id=video_id)
     if not video:
         return JSONResponse(
@@ -122,7 +122,7 @@ async def get_video_details(request:Request, video_id:str):
             }
         )
     
-    chunk_model = await ChunkModel.get_instance(db_client=request.app.mongodb_client)
+    chunk_model = await ChunkModel.get_instance(db_client=request.app.db_client)
 
     chunks_count = 0
     has_records = True
@@ -154,8 +154,8 @@ async def get_video_details(request:Request, video_id:str):
 
 @data_router.delete("/data/delete_video/{video_id}")
 async def delete_video(request:Request, video_id:str):
-    chunk_model = await ChunkModel.get_instance(db_client=request.app.mongodb_client)
-    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
+    chunk_model = await ChunkModel.get_instance(db_client=request.app.db_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
 
     video = await video_model.get_video(video_id=video_id)
     if not video:

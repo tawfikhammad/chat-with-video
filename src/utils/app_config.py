@@ -5,8 +5,6 @@ class settings(BaseSettings):
     APP_NAME: str 
     APP_VERSION: str 
     YOUTUBE_API: str
-    MONGO_URL: str
-    MONGO_DB: str = "vidbot"
 
     GENERATION_BACKEND : str
     EMBEDDING_BACKEND : str
@@ -23,11 +21,11 @@ class settings(BaseSettings):
     DEFAULT_MAX_TOKENS: int
     DEFAULT_TEMPERATURE: float
 
-    VECTOR_DB_BACKEND : str
-    VECTOR_DB_HOST : str
-    VECTOR_DB_PORT : int
-    VECTOR_DB_GRPC_PORT : int
-    VECTOR_DB_DISTANCE_METHOD : str
+    POSTGRES_USERNAME: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_MAIN_DATABASE: str
 
     PRIMARY_LANG : str = "en"
     DEFAULT_LANG : str = "en"

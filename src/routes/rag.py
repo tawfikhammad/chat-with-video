@@ -13,8 +13,8 @@ rag_router = APIRouter()
 @rag_router.post("/collections/{video_id}/index")
 async def index_video(request: Request, video_id: str, push_request: PushRequest):
 
-    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
-    chunk_model = await ChunkModel.get_instance(db_client=request.app.mongodb_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
+    chunk_model = await ChunkModel.get_instance(db_client=request.app.db_client)
 
     video = await video_model.get_video(video_id=video_id)
     if not video:
@@ -69,7 +69,7 @@ async def index_video(request: Request, video_id: str, push_request: PushRequest
 @rag_router.post("/collections/{video_id}/search")
 async def search(request: Request, video_id: str, search_request: SearchRequest):
     
-    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
     video = await video_model.get_video(video_id=video_id)
     if not video:
         return JSONResponse(
@@ -107,7 +107,7 @@ async def search(request: Request, video_id: str, search_request: SearchRequest)
 @rag_router.post("/collections/{video_id}/answer")
 async def answer_rag(request: Request, video_id: str, search_request: SearchRequest):
     
-    video_model = await VideoModel.get_instance(db_client=request.app.mongodb_client)
+    video_model = await VideoModel.get_instance(db_client=request.app.db_client)
     video = await video_model.get_video(video_id=video_id)
 
     rag_controller = RAGController(
